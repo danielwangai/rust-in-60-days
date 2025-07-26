@@ -135,6 +135,23 @@ impl App {
         Ok(task)
     }
 
+    fn move_to_done(&mut self, id: u32) -> Result<&Task, String> {
+        let pos = self
+            .find_task_by_id(id)
+            .ok_or_else(|| format!("The task '{}' does not exist", id))?;
+
+        let task = self.tasks.get_mut(pos).unwrap();
+        if task.status != Status::Doing {
+            return Err(format!("The task of ID '{}' not currently in progress", id));
+        }
+
+        task.status = Status::Done;
+        task.updated_at = Some(Utc::now());
+
+        Ok(task)
+    }
+
+
     /// Searches for a task by its name in a case-insensitive manner.
     ///
     /// # Arguments
@@ -187,6 +204,10 @@ mod tests {
             let _ = app.add_task(TASK_NAME, TASK_DESCRIPTION);
             let _ = app.add_task("task 2", "description task 2");
             let _ = app.add_task("task 3", "description task 3");
+
+            let pos2 = app.find_task_by_id(2).unwrap();
+            let task2 = &mut app.tasks[pos2];
+            task2.status = Status::Doing;
 
             let pos3 = app.find_task_by_id(3).unwrap();
             let task3 = &mut app.tasks[pos3];
@@ -263,6 +284,31 @@ mod tests {
             err.as_str(),
             format!("The task of ID '{}' is already completed", 3)
         );
+    }
+
+    #[test]
+    fn move_task_to_done_state_succeeds() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        // move to doing state
+        let updated_task1 = setup.app.move_to_done(2).unwrap();
+        assert_eq!(updated_task1.status, Status::Done)
+    }
+
+    #[test]
+    fn move_task_to_done_state_fails() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        // task of id 1 is in the todo state
+        let res = setup.app.move_to_done(1);
+        assert!(res.is_err());
+
+        // fetch task of ID: 1 and confirm its still in the todo state
+        let pos = setup.app.find_task_by_id(1).unwrap();
+        let task = setup.app.tasks.get(pos).unwrap();
+        assert_eq!(task.status, Status::Todo);
     }
 }
 
