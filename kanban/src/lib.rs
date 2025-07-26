@@ -100,6 +100,41 @@ impl App {
         Ok(id)
     }
 
+    /// Moves a task from its current state to the `Doing` state.
+    ///
+    /// # Arguments
+    /// * `id` - The unique identifier of the task to move.
+    ///
+    /// # Returns
+    /// * `Ok(&Task)` - A reference to the updated task if the operation succeeds.
+    /// * `Err(String)` - An error message if:
+    ///    - The task does not exist (invalid `id`).
+    ///    - The task is already in the `Done` state (cannot move back to Doing).
+    ///
+    /// # Panics
+    /// This function calls `unwrap()` on the result of `find_task_by_id`.
+    /// If the task does not exist, this will panic.
+    /// **Consider handling the `Option` gracefully instead of unwrapping in production code.**
+    pub fn move_to_doing(&mut self, id: u32) -> Result<&Task, String> {
+        // Find the position of the task with the given ID in the `tasks` vector.
+        let pos = self.find_task_by_id(id).unwrap();
+
+        // Get a mutable reference to the task at this position.
+        let task = &mut self.tasks[pos];
+
+        // If the task is already completed, we cannot move it back to Doing.
+        if task.status == Status::Done {
+            return Err(format!("The task of ID '{}' is already completed", id));
+        }
+
+        // Update the task status and the updated timestamp.
+        task.status = Status::Doing;
+        task.updated_at = Some(Utc::now());
+
+        // Return a reference to the updated task.
+        Ok(task)
+    }
+
     /// Searches for a task by its name in a case-insensitive manner.
     ///
     /// # Arguments
@@ -115,6 +150,23 @@ impl App {
         self.tasks
             .iter()
             .position(|t| t.name.to_lowercase() == name.to_lowercase())
+    }
+
+    /// Searches for a task by its unique ID.
+    ///
+    /// # Arguments
+    /// * `id` - The unique identifier of the task to search for.
+    ///
+    /// # Returns
+    /// * `Some(usize)` - The position (index) of the task in the internal `tasks` vector.
+    /// * `None` - If no task with the given ID exists.
+    ///
+    /// # Note
+    /// The position returned here is a **0-based index**, which is how elements are stored in `Vec`.
+    pub fn find_task_by_id(&self, id: u32) -> Option<usize> {
+        // return the position of the task in storage vector
+        // NOTE: positions start from 1 not 0 like index
+        self.tasks.iter().position(|t| t.id == id)
     }
 }
 
@@ -135,6 +187,10 @@ mod tests {
             let _ = app.add_task(TASK_NAME, TASK_DESCRIPTION);
             let _ = app.add_task("task 2", "description task 2");
             let _ = app.add_task("task 3", "description task 3");
+
+            let pos3 = app.find_task_by_id(3).unwrap();
+            let task3 = &mut app.tasks[pos3];
+            task3.status = Status::Done;
 
             Setup { app }
         }
@@ -183,4 +239,30 @@ mod tests {
         let task1 = &mut setup.app.tasks[pos1];
         assert_eq!(task1.name, TASK_NAME.to_string());
     }
+
+    #[test]
+    fn move_task_to_doing_state_succeeds() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        // move to doing state
+        let updated_task1 = setup.app.move_to_doing(1).unwrap();
+        assert_eq!(updated_task1.status, Status::Doing)
+    }
+
+    #[test]
+    fn move_task_to_doing_state_fails() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        // move to doing state
+        let res = setup.app.move_to_doing(3);
+        assert!(res.is_err());
+        let err = res.expect_err("Should have returned an error");
+        assert_eq!(
+            err.as_str(),
+            format!("The task of ID '{}' is already completed", 3)
+        );
+    }
 }
+
