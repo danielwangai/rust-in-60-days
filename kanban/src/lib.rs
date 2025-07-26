@@ -151,6 +151,30 @@ impl App {
         Ok(task)
     }
 
+    fn list_todo_tasks(&self) -> Vec<&Task> {
+        self.tasks
+            .iter()
+            .filter(|task| task.status == Status::Todo)
+            .collect()
+    }
+
+    fn list_doing_tasks(&self) -> Vec<&Task> {
+        self.tasks
+            .iter()
+            .filter(|task| task.status == Status::Doing)
+            .collect()
+    }
+
+    fn list_completed_tasks(&self) -> Vec<&Task> {
+        self.tasks
+            .iter()
+            .filter(|task| task.status == Status::Done)
+            .collect()
+    }
+
+    fn list_all_tasks(&self) -> &[Task] {
+        &self.tasks
+    }
 
     /// Searches for a task by its name in a case-insensitive manner.
     ///
@@ -310,5 +334,31 @@ mod tests {
         let task = setup.app.tasks.get(pos).unwrap();
         assert_eq!(task.status, Status::Todo);
     }
-}
 
+    #[test]
+    fn list_todo_tasks() {
+        let setup = Setup::new();
+        let tasks = setup.app.list_todo_tasks();
+    }
+
+    #[test]
+    fn list_doing_tasks() {
+        let setup = Setup::new();
+        let tasks = setup.app.list_doing_tasks();
+        assert_eq!(tasks.len(), 1);
+    }
+
+    #[test]
+    fn list_completed_tasks() {
+        let setup = Setup::new();
+        let tasks = setup.app.list_completed_tasks();
+        assert_eq!(tasks.len(), 1);
+    }
+
+    #[test]
+    fn list_all_tasks() {
+        let setup = Setup::new();
+        let tasks = setup.app.list_all_tasks();
+        assert_eq!(tasks.len(), 3);
+    }
+}
