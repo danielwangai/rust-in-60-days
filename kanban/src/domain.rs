@@ -21,7 +21,7 @@ pub struct Task {
     /// task name/title
     pub name: String,
     /// detailed description of the task
-    pub description: String, // optional field. Can be updated later
+    pub description: String, // TODO: cast into Option<String> optional field. Can be updated later
     /// current status of the task
     pub status: Status, // default is Todo set during creation of new task
     /// when the task was created
@@ -57,10 +57,7 @@ impl Task {
     // validations for a new task
     pub fn before_add(&self) -> Result<(), String> {
         if self.name.is_empty() {
-            return Err(String::from("Task name is required"))
-        }
-        if self.status != Status::Todo {
-            return Err(String::from("New task must be in todo state"))
+            return Err(String::from("Task name is required"));
         }
 
         Ok(())
@@ -68,7 +65,7 @@ impl Task {
 
     pub fn before_move_to_doing(&self) -> Result<(), String> {
         if self.status != Status::Todo {
-            return Err(String::from("New task must be in the Todo state"))
+            return Err(String::from("Task must be in the Todo state before marking as in progress"));
         }
 
         Ok(())
@@ -76,7 +73,9 @@ impl Task {
 
     pub fn before_move_to_done(&self) -> Result<(), String> {
         if self.status != Status::Doing {
-            return Err(String::from("New task must be in progress to mark as complete"))
+            return Err(String::from(
+                "Task must be in progress state before marking as Done",
+            ));
         }
 
         Ok(())
@@ -88,7 +87,9 @@ impl Task {
                 self.status = Status::Doing;
                 Ok(self)
             }
-            _ => Err(String::from("Task must be in Todo state to move to in progress")),
+            _ => Err(String::from(
+                "Task must be in Todo state to move to in progress",
+            )),
         }
     }
 
@@ -98,7 +99,9 @@ impl Task {
                 self.status = Status::Done;
                 Ok(self)
             }
-            _ => Err(String::from("Task must be in progress state to mark as completed")),
+            _ => Err(String::from(
+                "Task must be in progress state to mark as completed",
+            )),
         }
     }
 }

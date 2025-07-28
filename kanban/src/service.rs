@@ -2,7 +2,7 @@ use chrono::Utc;
 
 use crate::domain;
 use crate::{
-    domain::{ Status, Task},
+    domain::{Status, Task},
     repository::TaskRepository,
 };
 
@@ -17,7 +17,7 @@ impl<R: TaskRepository> TaskService<R> {
 
     pub fn add_task(&mut self, name: &str, desc: &str) -> Result<&Task, String> {
         // initialize a new task object
-        let task= domain::Task::new(name.to_string(), desc.to_string());
+        let task = domain::Task::new(name.to_string(), desc.to_string());
         // perform validations
         task.before_add()?;
 
@@ -55,5 +55,11 @@ impl<R: TaskRepository> TaskService<R> {
     pub fn list_by_status(&mut self, status: Status) -> Vec<&Task> {
         self.repo.list_by_status(status)
     }
-}
 
+    pub fn find_by_id(&mut self, id: u32) -> Option<&mut Task> {
+        match self.repo.find_by_id(id) {
+            Some(task) => Some(task),
+            None => None,
+        }
+    }
+}
