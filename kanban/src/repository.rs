@@ -1,5 +1,5 @@
-use chrono::Utc;
 use crate::domain::{Status, Task};
+use chrono::Utc;
 
 /// Trait defining the behavior of a Task repository.
 pub trait TaskRepository {
@@ -74,7 +74,9 @@ impl TaskRepository for InMemoryTaskRepository {
 
         let task = task.unwrap();
         if task.status != Status::Todo {
-            return Err(String::from("task must be in Todo state to move to in progress"));
+            return Err(String::from(
+                "task must be in Todo state to move to in progress",
+            ));
         }
 
         task.status = Status::Doing;
@@ -209,5 +211,96 @@ mod tests {
         assert_eq!(setup.repo.tasks.last().unwrap().name, task_name.to_string());
         assert!(no_of_tasks_after > no_of_tasks_before);
         assert_eq!(new_task_copy.name, task_name.to_string());
+    }
+
+    #[test]
+    fn add_task_rejects_duplicate_name() {
+        let mut setup = Setup::new();
+        let task = Task::new(TASK_NAME.to_string(), TASK_DESCRIPTION.to_string());
+        let res = setup.repo.add_task(task);
+
+        assert_eq!(res.is_err(), true);
+        let err = res.expect_err("Should have returned an error");
+        assert_eq!(
+            err.as_str(),
+            format!("Task with name '{}' already exists", TASK_NAME)
+        );
+    }
+
+    #[test]
+    fn find_task_by_name_succeeds() {
+        let mut setup = Setup::new();
+
+        let task1 = setup.repo.find_by_name(TASK_NAME).unwrap();
+        assert_eq!(task1.name, TASK_NAME.to_string());
+    }
+
+    #[test]
+    fn move_task_to_doing_state_succeeds() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        // move to doing state
+        let res = setup.repo.move_to_doing(1);
+        assert!(res.is_ok());
+
+        let task1 = setup.repo.find_by_id(1).unwrap();
+        assert_eq!(task1.status, Status::Doing)
+    }
+
+    #[test]
+    fn move_task_to_doing_state_fails() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        let res = setup.repo.move_to_doing(3);
+        assert!(res.is_err());
+
+        // fetch task of ID: 1 and confirm its still in the todo state
+        let task = setup.repo.find_by_id(3).unwrap();
+        assert_eq!(task.status, Status::Done);
+    }
+
+    #[test]
+    fn move_task_to_done_state_succeeds() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        // move to doing state
+        let res = setup.repo.move_to_done(2);
+        assert!(res.is_ok());
+
+        let task2 = setup.repo.find_by_id(2).unwrap();
+        assert_eq!(task2.status, Status::Done)
+    }
+
+    #[test]
+    fn move_task_to_done_state_fails() {
+        // select task to be moved to Doing state
+        let mut setup = Setup::new();
+
+        // task of id 1 is in the todo state
+        let res = setup.repo.move_to_done(1);
+        assert!(res.is_err());
+
+        // fetch task of ID: 1 and confirm its still in the todo state
+        let task = setup.repo.find_by_id(1).unwrap();
+        assert_eq!(task.status, Status::Todo);
+    }
+
+    #[test]
+    fn list_tasks() {
+        let setup = Setup::new();
+        let todo_tasks = setup.repo.list_by_status(Status::Todo);
+        assert_eq!(todo_tasks.len(), 1);
+
+        let doing_tasks = setup.repo.list_by_status(Status::Doing);
+        assert_eq!(doing_tasks.len(), 1);
+
+        let done_tasks = setup.repo.list_by_status(Status::Done);
+        assert_eq!(done_tasks.len(), 1);
+
+        let all_tasks = setup.repo.list_by_status(Status::None);
+        assert_eq!(all_tasks.len(), 3);
     }
 }

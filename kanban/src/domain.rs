@@ -57,10 +57,10 @@ impl Task {
     // validations for a new task
     pub fn before_add(&self) -> Result<(), String> {
         if self.name.is_empty() {
-            return Err(String::from("Task name is required"))
+            return Err(String::from("Task name is required"));
         }
         if self.status != Status::Todo {
-            return Err(String::from("New task must be in todo state"))
+            return Err(String::from("New task must be in todo state"));
         }
 
         Ok(())
@@ -68,7 +68,7 @@ impl Task {
 
     pub fn before_move_to_doing(&self) -> Result<(), String> {
         if self.status != Status::Todo {
-            return Err(String::from("New task must be in the Todo state"))
+            return Err(String::from("New task must be in the Todo state"));
         }
 
         Ok(())
@@ -76,7 +76,9 @@ impl Task {
 
     pub fn before_move_to_done(&self) -> Result<(), String> {
         if self.status != Status::Doing {
-            return Err(String::from("New task must be in progress to mark as complete"))
+            return Err(String::from(
+                "New task must be in progress to mark as complete",
+            ));
         }
 
         Ok(())
@@ -88,7 +90,9 @@ impl Task {
                 self.status = Status::Doing;
                 Ok(self)
             }
-            _ => Err(String::from("Task must be in Todo state to move to in progress")),
+            _ => Err(String::from(
+                "Task must be in Todo state to move to in progress",
+            )),
         }
     }
 
@@ -98,7 +102,9 @@ impl Task {
                 self.status = Status::Done;
                 Ok(self)
             }
-            _ => Err(String::from("Task must be in progress state to mark as completed")),
+            _ => Err(String::from(
+                "Task must be in progress state to mark as completed",
+            )),
         }
     }
 }
