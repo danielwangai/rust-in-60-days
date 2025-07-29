@@ -65,6 +65,7 @@ impl Task {
 
     pub fn before_move_to_doing(&self) -> Result<(), String> {
         if self.status != Status::Todo {
+            kanban-v2-decouple
             return Err(String::from("Task must be in the Todo state before marking as in progress"));
         }
 
