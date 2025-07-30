@@ -3,14 +3,14 @@ use chrono::Utc;
 use crate::domain;
 use crate::{
     domain::{Status, Task},
-    repository::TaskRepository,
+    inmemory_repository::InMemoryTaskRepo,
 };
 
-pub struct TaskService<R: TaskRepository> {
+pub struct TaskService<R: InMemoryTaskRepo> {
     repo: R,
 }
 
-impl<R: TaskRepository> TaskService<R> {
+impl<R: InMemoryTaskRepo> TaskService<R> {
     pub fn new(repo: R) -> Self {
         Self { repo }
     }
@@ -19,9 +19,12 @@ impl<R: TaskRepository> TaskService<R> {
         // initialize a new task object
         let task = domain::Task::new(name.to_string(), desc.to_string());
         // perform validations
-        task.before_add()?;
+        // task.before_add()?;
 
-        Ok(self.repo.add_task(task)?)
+        Ok(self
+            .repo
+            .add_task(&*task.name.to_string(), &*task.description.to_string())?)
+        // TODO: add converters
     }
 
     pub fn move_to_doing(&mut self, id: u32) -> Result<(), String> {
@@ -31,9 +34,11 @@ impl<R: TaskRepository> TaskService<R> {
         }
 
         let task = task.unwrap();
-        task.before_move_to_doing()?;
+        // task.before_move_to_doing()?;
 
         self.repo.move_to_doing(id)?;
+
+        // TODO: add converters
 
         Ok(())
     }
@@ -45,7 +50,7 @@ impl<R: TaskRepository> TaskService<R> {
         }
 
         let task = task.unwrap();
-        task.before_move_to_done()?;
+        // task.before_move_to_done()?;
 
         self.repo.move_to_done(id)?;
 
@@ -66,8 +71,8 @@ impl<R: TaskRepository> TaskService<R> {
 
 #[cfg(test)]
 mod tests {
-    use crate::InMemoryTaskRepository;
     use super::*;
+    use crate::InMemoryTaskRepository;
 
     struct Setup {
         svc: TaskService<InMemoryTaskRepository>,
@@ -90,20 +95,20 @@ mod tests {
             let mut svc = TaskService::new(InMemoryTaskRepository::new());
 
             // seed tasks
-            svc.add_task(TASK_NAME1, TASK_DESCRIPTION1).expect("task not created");
-            svc.add_task(TASK_NAME2, TASK_DESCRIPTION2).expect("task not created");
-            svc.add_task(TASK_NAME3, TASK_DESCRIPTION3).expect("task not created");
+            svc.add_task(TASK_NAME1, TASK_DESCRIPTION1)
+                .expect("task not created");
+            svc.add_task(TASK_NAME2, TASK_DESCRIPTION2)
+                .expect("task not created");
+            svc.add_task(TASK_NAME3, TASK_DESCRIPTION3)
+                .expect("task not created");
 
             // move task2 and task3 to Doing state
             let _ = svc.repo.move_to_doing(TASK2_ID);
             let _ = svc.repo.move_to_doing(TASK3_ID);
             // move task3 to Done state
             let _ = svc.repo.move_to_done(TASK3_ID);
-            Setup{
-                svc,
-            }
+            Setup { svc }
         }
-
     }
     #[test]
     fn test_add_task_succeeds() {
@@ -124,7 +129,10 @@ mod tests {
         assert!(res.is_err());
 
         let err = res.expect_err("should return an error");
-        assert_eq!(err.as_str(), format!("Task with name '{}' already exists", TASK_NAME1));
+        assert_eq!(
+            err.as_str(),
+            format!("Task with name '{}' already exists", TASK_NAME1)
+        );
     }
 
     #[test]
@@ -159,7 +167,10 @@ mod tests {
         assert!(res.is_err());
 
         let err = res.expect_err("should return an error");
-        assert_eq!(err.as_str(), "Task must be in the Todo state before marking as in progress");
+        assert_eq!(
+            err.as_str(),
+            "Task must be in the Todo state before marking as in progress"
+        );
     }
 
     #[test]
@@ -184,6 +195,9 @@ mod tests {
         assert!(res.is_err());
 
         let err = res.expect_err("should return an error");
-        assert_eq!(err.as_str(), "Task must be in progress state before marking as Done");
+        assert_eq!(
+            err.as_str(),
+            "Task must be in progress state before marking as Done"
+        );
     }
 }
