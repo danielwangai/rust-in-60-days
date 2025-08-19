@@ -2,7 +2,11 @@
 I'm taking on a 60-day challenge to learn Rust by building a series of projects. The goal is to gain hands-on experience with Rust's unique features—ownership, lifetimes, concurrency, and more—by creating real-world applications from scratch.
 
 ### Projects
-Day 1+: [Kanban App](https://github.com/danielwangai/rust-in-60-days/tree/main/kanban) – A simple task management app to practice Rust basics, data structures, and CLI.
+| Project | Description |
+|---------|-------------|
+| [Kanban App](https://github.com/danielwangai/rust-in-60-days/tree/main/kanban) | A simple task management app to practice Rust basics, data structures, and CLI. |
+| [Twitter dApp](https://github.com/danielwangai/sol_twitter) | A decentralized application built on the Solana blockchain. |
+
 
 More projects will follow as I continue exploring Rust.
 
